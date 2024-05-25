@@ -1,0 +1,54 @@
+#!/bin/sh
+
+if [[ ${PWD##*/} == "cli" ]]
+then
+	cd ..
+fi
+
+USER=$(grep POSTGRES_USER .env | cut -d "=" -f2)
+PASSWORD=$(grep POSTGRES_PASSWORD .env | cut -d "=" -f2)
+DB=$(grep POSTGRES_DB .env | cut -d "=" -f2)
+
+if [[ $1 == "create" ]]
+then
+	docker run --rm \
+		-v $PWD/migrations:/migrations \
+		--network host \
+		migrate/migrate \
+			-path=/migrations/ \
+			-database "postgresql://${USER}:${PASSWORD}@127.0.0.1:5432/${DB}?sslmode=disable" \
+			create \
+				-ext sql \
+				-dir /migrations \
+				-seq $2
+elif [[ $1 == "up" ]]
+then
+	docker run --rm \
+		-v $PWD/migrations:/migrations \
+		--network host \
+		migrate/migrate \
+			-path=/migrations/ \
+			-database "postgresql://${USER}:${PASSWORD}@127.0.0.1:5432/${DB}?sslmode=disable" \
+			up $2
+elif [[ $1 == "down" ]]
+then
+	docker run --rm \
+		-v $PWD/migrations:/migrations \
+		--network host \
+		migrate/migrate \
+			-path=/migrations/ \
+			-database "postgresql://${USER}:${PASSWORD}@127.0.0.1:5432/${DB}?sslmode=disable" \
+			down $2
+elif [[ $1 == "force" ]]
+then
+	docker run --rm \
+		-v $PWD/migrations:/migrations \
+		--network host \
+		migrate/migrate \
+			-path=/migrations/ \
+			-database "postgresql://${USER}:${PASSWORD}@127.0.0.1:5432/${DB}?sslmode=disable" \
+			force $2
+else
+	echo "Invalid command '$1'. Usage: migration [create|up|down] [name]"
+	exit 1
+fi
